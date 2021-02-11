@@ -1,0 +1,54 @@
+<launch>
+    <arg name="device" default="/dev/video0"/>
+    <arg name="camera_name" default="dslr_camera"/>
+    <arg name="use_calibration" default="false"/>
+    <arg name="use_marker_detection" default="true"/>
+
+    <!-- Enable USB Camerac -->
+    <include file="$(find dslr_ros)/launch/usb_cam.launch">
+        <arg name="device" value="$(arg device)"/>
+        <arg name="img_width" value="960"/>
+        <arg name="img_height" value="640"/>
+        <arg name="pixel_format" value="yuyv"/>
+        <arg name="camera_frame" value="$(arg camera_name)" />
+        <arg name="io_method" value="mmap" />
+        <arg name="camera_info_url" value="package://dslr_ros/config/eos800d_video.yaml "/>
+    </include>
+
+    <node name="image_view" pkg="image_view" type="image_view" respawn="false" output="screen">
+        <remap from="image" to="/usb_cam/image_raw"/>
+        <param name="autosize" value="true" />
+    </node>
+
+
+    <group if="$(arg use_calibration)">
+        <!-- Camera Calibration Node -->
+        <include file="$(find dslr_ros)/launch/calibration.launch">
+            <arg name="image_topic" value="$(arg camera_name)/image_raw"/>
+            <arg name="coefficients" value="4"/>
+            <arg name="square_size" value="0.026"/>
+            <arg name="board_size" value="8x6"/>
+        </include>
+    </group>
+
+
+    <group if="$(arg use_marker_detection)">
+        <!-- Aruco Marker Detector Launch file -->
+        <include file="$(find dslr_ros)/launch/aruco_detect.launch">
+            <arg name="camera" value="$(arg camera_name)"/>
+            <arg name="image" value="image_raw"/>
+            <arg name="transport" value="compressed"/>
+            <arg name="fiducial_len" value="0.15"/>
+            <arg name="dictionary" value="0"/>
+            <arg name="do_pose_estimation" value="true"/>
+            <arg name="ignore_fiducials" value="" />
+            <arg name="fiducial_len_override" value="" />
+        </include>
+        <!-- Image View Node -->
+        <node name="image_view" pkg="image_view" type="image_view" respawn="false" output="screen">
+            <remap from="image" to="fiducial_images"/>
+            <param name="autosize" value="true" />
+        </node>
+    </group>
+
+</launch>

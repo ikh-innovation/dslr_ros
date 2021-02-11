@@ -1,0 +1,13 @@
+<?xml version="1.0"?>
+<launch>
+    <arg name="image_topic" default="/usb_cam/image_raw"/>
+    <arg name="coefficients" default="4"/>
+    <arg name="square_size" default="0.026"/>
+    <arg name="board_size" default="8x6"/>
+
+    <node pkg="camera_calibration" type="cameracalibrator.py" name="cameracalibrator" output="screen" args="
+    --size $(arg board_size)
+    --square $(arg square_size)
+    --k-coefficients=$(arg coefficients)
+    image:=$(arg impage_topic)"/>
+</launch>
